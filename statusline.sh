@@ -56,10 +56,10 @@ if [ -n "$WEEKLY" ]; then
   fi
 fi
 
-# Append logged-in email
-EMAIL=$(claude auth status 2>/dev/null | jq -r '.email // empty' 2>/dev/null)
-if [ -n "$EMAIL" ]; then
-  OUT_STR="$OUT_STR ${DIM}│${RST} ${DIM}${EMAIL}${RST}"
+# Append logged-in organization
+ORG=$(claude auth status 2>/dev/null | jq -r '.orgName // empty' 2>/dev/null)
+if [ -n "$ORG" ]; then
+  OUT_STR="$OUT_STR ${DIM}│${RST} ${DIM}${ORG}${RST}"
 fi
 
 echo -e "$OUT_STR"
