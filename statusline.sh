@@ -58,6 +58,9 @@ fi
 
 # Append logged-in organization
 ORG=$(claude auth status 2>/dev/null | jq -r '.orgName // empty' 2>/dev/null)
+if [ "$ORG" = "grunau@safenow.de's Organization" ]; then
+  ORG="Private"
+fi
 if [ -n "$ORG" ]; then
   OUT_STR="$OUT_STR ${DIM}│${RST} ${DIM}${ORG}${RST}"
 fi
