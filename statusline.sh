@@ -25,6 +25,7 @@ GREEN='\033[32m'
 YELLOW='\033[33m'
 BLUE='\033[34m'
 ORANGE='\033[38;5;208m'
+LIGHT_GRAY='\033[38;5;250m'
 
 # Build output
 OUT_STR="${BOLD}${ORANGE}${MODEL}${RST}"
@@ -56,13 +57,42 @@ if [ -n "$WEEKLY" ]; then
   fi
 fi
 
-# Append logged-in organization
+# Resolve logged-in organization (shown on line 2 as "account")
 ORG=$(claude auth status 2>/dev/null | jq -r '.orgName // empty' 2>/dev/null)
 if [ "$ORG" = "grunau@safenow.de's Organization" ]; then
   ORG="Private"
 fi
+
+# Second line: repo | branch | account (all dim, same color as account)
+CWD=$(echo "$input" | jq -r '.workspace.current_dir // .cwd // empty')
+REPO=""
+BRANCH=""
+if [ -n "$CWD" ] && [ -d "$CWD" ]; then
+  if git -C "$CWD" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    ORIGIN_URL=$(git -C "$CWD" config --get remote.origin.url 2>/dev/null)
+    if [ -n "$ORIGIN_URL" ]; then
+      REPO=$(basename -s .git "$ORIGIN_URL")
+    else
+      COMMON_DIR=$(git -C "$CWD" rev-parse --git-common-dir 2>/dev/null)
+      [ -n "$COMMON_DIR" ] && REPO=$(basename "$(dirname "$(cd "$CWD" && cd "$COMMON_DIR" && pwd)")")
+    fi
+    BRANCH=$(git -C "$CWD" branch --show-current 2>/dev/null)
+  fi
+fi
+
+LINE2=""
+[ -n "$REPO" ] && LINE2="${DIM}${REPO}${RST}"
+if [ -n "$BRANCH" ]; then
+  if [ -n "$LINE2" ]; then
+    LINE2="${LINE2}${DIM} │ ${BRANCH}${RST}"
+  else
+    LINE2="${DIM}${BRANCH}${RST}"
+  fi
+fi
 if [ -n "$ORG" ]; then
-  OUT_STR="$OUT_STR ${DIM}│${RST} ${DIM}${ORG}${RST}"
+  [ -n "$LINE2" ] && LINE2="$LINE2 ${DIM}│ "
+  LINE2="${LINE2}${DIM}${ORG}${RST}"
 fi
 
 echo -e "$OUT_STR"
+[ -n "$LINE2" ] && echo -e "$LINE2"
